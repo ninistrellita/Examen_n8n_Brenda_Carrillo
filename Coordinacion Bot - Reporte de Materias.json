@@ -1,0 +1,167 @@
+{
+  "name": "Coordinacion Bot - Reporte de Materias",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "c5007b15-7cfa-497f-a135-09a5963785eb",
+      "name": "Cada hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1SCnmq4yH3zUKBmDqLxps_1g6hAjN2pqyFptJWuSSX8U",
+          "mode": "list",
+          "cachedResultName": "TUTORIAS"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1"
+        },
+        "options": {}
+      },
+      "id": "1656c806-2434-4f18-a871-011dcdcea4de",
+      "name": "Leer TUTORIAS",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1344,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "bKCLKReLOrQoqcl1",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst counts = {};\nfor (const item of items) {\n  const materia = (item.json.materia || 'Sin materia').toString().trim() || 'Sin materia';\n  counts[materia] = (counts[materia] || 0) + 1;\n}\nconst rows = Object.entries(counts)\n  .sort((a, b) => b[1] - a[1])\n  .map(([materia, count]) => ({ materia, count }));\nreturn rows.map(r => ({ json: r }));"
+      },
+      "id": "6cf627e1-6ef2-4054-9849-cf0d72914e11",
+      "name": "Contar por materia",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst fecha = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });\nconst lineas = items.map(i => `\\u2022 <b>${i.json.materia}</b>: ${i.json.count}`).join('\\n');\nconst total = items.reduce((acc, i) => acc + (i.json.count || 0), 0);\nconst text = `\\uD83D\\uDCCA <b>Reporte de tutor\\u00edas por materia</b>\\n<i>Generado: ${fecha}</i>\\n\\n${lineas || 'Sin datos'}\\n\\n<b>Total: ${total}</b>`;\nreturn [{ json: { text, total, fecha } }];"
+      },
+      "id": "955e36e3-de4e-456d-be96-2a8e0cf9ce9f",
+      "name": "Generar reporte Telegram",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "8679199609",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "95f389d0-6da6-4d17-bdff-d39dbf574158",
+      "name": "Send a text message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2000,
+        192
+      ],
+      "executeOnce": true,
+      "webhookId": "02606349-1b02-4d35-9f68-35ce03d356d3",
+      "credentials": {
+        "telegramApi": {
+          "id": "oVnqiO6cbYF7AZBN",
+          "name": "Coordinacion Bot"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cada hora": {
+      "main": [
+        [
+          {
+            "node": "Leer TUTORIAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer TUTORIAS": {
+      "main": [
+        [
+          {
+            "node": "Contar por materia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contar por materia": {
+      "main": [
+        [
+          {
+            "node": "Generar reporte Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar reporte Telegram": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2b7ac50b-4aac-4092-b0ed-63a5e7eaf622",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4d317bb5359fef171464508f7b25e5e30699cec73624c6d66d74c07e7d9e73a5"
+  },
+  "nodeGroups": [],
+  "id": "86yv971F7t15xZQg",
+  "tags": []
+}
